@@ -1,22 +1,18 @@
-# 🧠🎙️ PILL – Pi LLaMA Voice-to-Voice AI Assistant
+# 🧠 PILL: Pi LLaMA Voice-to-Voice AI Assistant
 
-**PILL** (Pi LLaMA) is an offline, privacy-first, real-time voice assistant powered by Whisper (STT), TinyLLaMA (LLM), and Piper (TTS), built specifically for the Raspberry Pi 4. It was created as a Bachelor's Major Project to demonstrate an end-to-end voice interaction system on constrained hardware.
+**PILL** (Pi LLaMA) is an offline, fully local voice assistant for Raspberry Pi, integrating:
 
----
+- 🎙️ **Whisper.cpp** — Speech-to-Text (STT)
+- 🧠 **TinyLLaMA (via llama.cpp)** — Language Model for text generation
+- 🔊 **Piper TTS** — Text-to-Speech (TTS)
 
-## 🔧 Key Features
-
-- 🎤 Real-time voice input and output
-- 🧠 LLM-powered response with TinyLLaMA (via llama.cpp)
-- 🗣️ Natural-sounding speech via Piper TTS
-- 🐧 Fully local and open-source
-- 🍓 Optimized for Raspberry Pi 4
+Built as a **Bachelor's Major Project**, it delivers real-time, low-latency voice interactions on constrained hardware.
 
 ---
 
-## 🗂️ Project Structure
+## 📁 Project Structure
 
-```bash
+```
 pill/
 ├── audio/                          # Temporary audio files
 │   └── speech.wav
@@ -35,139 +31,140 @@ pill/
 │   └── voice/                      # ONNX voice models
 ├── requirements.txt
 └── README.md
+```
+
+---
 
 ## 🔁 Workflow Overview
 
 ### 🗣️ 1. User Speaks
-Microphone input is captured via PyAudio.
+- Audio is recorded with a microphone and saved to `audio/speech.wav`.
 
 ### 🧏 2. Speech-to-Text (STT)
-Audio stream is transcribed in real-time using [Whisper.cpp](https://github.com/ggerganov/whisper.cpp) running a base or tiny model.
-
-**Result:** `"What’s the weather today?"`
+- Audio is transcribed using Whisper.cpp with a small model like `ggml-tiny.bin`.
 
 ### 🧠 3. Text Generation with LLaMA
-Transcribed text is sent to [TinyLLaMA](https://huggingface.co/TinyLlama) running via [llama.cpp](https://github.com/ggerganov/llama.cpp) with a lightweight quantized model (e.g., 3B Q4_K_M).
+- Transcribed text is passed to TinyLLaMA via `llama.cpp`.
+- A quantized model (Q4/Q5) ensures fast inference on Raspberry Pi.
 
-Context is preserved to maintain conversation state.
+### 🔊 4. Text-to-Speech (TTS)
+- Piper TTS synthesizes the response using a pre-downloaded ONNX voice model.
 
-**Result:** `"I'm not connected to the internet, but it's always sunny with me!"`
+---
 
-### 🗣️ 4. Text-to-Speech (TTS)
-Generated response is passed to [Piper TTS](https://github.com/rhasspy/piper) using a selected voice model.
+## 🛠️ Step-by-Step Setup
 
-Audio is streamed back to the speaker in real time.
+### 1️⃣ Clone the Repository
 
-## 🛠 Dependencies
+```bash
+git clone https://github.com/your-username/pill.git
+cd pill
+```
 
-* [Whisper.cpp](https://github.com/ggerganov/whisper.cpp) – Real-time STT
-* [LLaMA.cpp](https://github.com/ggerganov/llama.cpp) – TinyLLaMA inference
-* [Piper TTS](https://github.com/rhasspy/piper) – Lightweight TTS engine
+### 2️⃣ Install Python Dependencies
 
-# setup.sh
-mkdir -p stt/models llm/models tts/voice/libritts_r
+```bash
+pip install -r requirements.txt
+```
+
+### 3️⃣ Build/Download Binaries
+
+- **Whisper.cpp:** Build `main` as `whisper-cli`
+- **llama.cpp:** Build `main` as `llama-cli`
+- **Piper:** Build binary and required shared libs
+
+Place them in:
+```
+stt/bin/whisper-cli
+llm/bin/llama-cli
+tts/piper/piper
+```
+
+### 4️⃣ Download Models
+
+#### Whisper Model
+
+```bash
 wget https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin -P stt/models/
+```
+
+#### TinyLLaMA (GGUF)
+
+- Source: https://huggingface.co/cognitivecomputations/TinyLlama-1.1B-Chat-v1.0
+
+Ensure format is `.gguf` and quantized (e.g., Q4_K_M):
+
+```bash
+# Example (after conversion if needed)
+mv <downloaded>.gguf llm/models/tinyllama_1b_q4_chat.gguf
+```
+
+#### Piper Voice Model
+
+```bash
 wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US-libritts_r-medium.onnx -P tts/voice/libritts_r/
+```
 
+---
 
-### Build Whisper, LLaMA, Piper
-Follow official repo instructions or use your own builds and place the binaries in:
-## 🧠 Models & Binaries
+## ⚙️ Environment Configuration
 
-### 1. Whisper (STT)
-* **🔧 Binary:** `whisper-cli` (from [whisper.cpp](https://github.com/ggerganov/whisper.cpp))
-    ```
-    📁 Path: stt/bin/whisper-cli
-    ```
-* **📄 Model File:** `ggml-tiny.bin`
-    ```
-    📁 Path: stt/models/ggml-tiny.bin
-    ```
-    ```bash
-    # Download model
-    wget [https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin) -P stt/models/
-    ```
-
-### 2. TinyLLaMA (LLM)
-* **🔧 Binary:** `llama-cli` (from [llama.cpp](https://github.com/ggerganov/llama.cpp))
-    ```
-    📁 Path: llm/bin/llama-cli
-    ```
-* **📄 Model File:** `tinyllama_1b_q4_chat.gguf`
-    ```
-    📁 Path: llm/models/tinyllama_1b_q4_chat.gguf
-    ```
-    ```bash
-    # Example download source (you may need to convert to GGUF format):
-    wget [https://huggingface.co/cognitivecomputations/TinyLlama-1.1B-Chat-v1.0](https://huggingface.co/cognitivecomputations/TinyLlama-1.1B-Chat-v1.0) -O /tmp/tinyllama.pth
-    # (Conversion to GGUF not shown here - refer to llama.cpp documentation)
-    # Move the converted GGUF file to llm/models/tinyllama_1b_q4_chat.gguf
-    ```
-    Make sure your version is quantized (e.g., Q4 or Q5) for Raspberry Pi compatibility.
-
-### 3. Piper (TTS)
-* **🔧 Binary:** `piper` (from [piper](https://github.com/rhasspy/piper))
-    ```
-    📁 Path: tts/piper/piper
-    ```
-* **📄 Voice Model:** `en_US-libritts_r-medium.onnx`
-    ```
-    📁 Path: tts/voice/libritts_r/en_US-libritts_r-medium.onnx
-    ```
-    ```bash
-    # Download from official model list:
-    # [https://huggingface.co/rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices)
-
-    # Example:
-    wget [https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US-libritts_r-medium.onnx](https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US-libritts_r-medium.onnx) -P tts/voice/libritts_r/
-    ```
-
-## ✅ Additional Notes
-
-### Audio Format Requirements:
-
-* WAV
-* Mono
-* 16-bit
-* 16000 Hz sample rate
-
-### Environment Variables:
-
-Set `LD_LIBRARY_PATH` to include `llm/bin` for `llama.cpp` dynamic libraries:
+Ensure `llm/bin` is in your shared library path:
 
 ```bash
 export LD_LIBRARY_PATH=llm/bin:$LD_LIBRARY_PATH
-Hardware Tested:
-Raspberry Pi 4 (4GB/8GB)
-USB mic or onboard mic (via arecord)
-📁 Directory Summary
-Bash
+```
 
-stt/
-├── bin/whisper-cli
-└── models/ggml-tiny.bin
+---
 
-llm/
-├── bin/llama-cli
-└── models/tinyllama_1b_q4_chat.gguf
+## 🚀 Run the Assistant
 
-tts/
-├── piper/piper
-└── voice/libritts_r/en_US-libritts_r-medium.onnx
-🧪 Verification
-After setup, you can test each module separately:
+```bash
+cd bin
+./run.sh
+```
 
-Whisper:
-Bash
+This pipeline will:
+1. Record audio from mic
+2. Transcribe with Whisper
+3. Generate reply with LLaMA
+4. Speak with Piper
 
+---
+
+## 🧪 Manual Testing
+
+### Whisper (STT)
+
+```bash
 ./stt/bin/whisper-cli ../audio/speech.wav --model ../stt/models/ggml-tiny.bin
-LLaMA:
-Bash
+```
 
+### LLaMA (LLM)
+
+```bash
 ./llm/bin/llama-cli -m ../llm/models/tinyllama_1b_q4_chat.gguf -p "Hello, who are you?" -n 50
-Piper:
-Bash
+```
 
-./tts/piper/piper --model ../tts/voice/libritts_r/en_US-libritts_r-medium.onnx --text "Hello, world." --output_file output.wav
-# Play the output audio file (e.g., using aplay on Linux):
-# aplay output.wav
+### Piper (TTS)
+
+```bash
+./tts/piper/piper --model ../tts/voice/libritts_r/en_US-libritts_r-medium.onnx --text "Hello, I am your Pi assistant."
+```
+
+---
+
+
+
+## 🧠 Hardware Requirements
+
+- Raspberry Pi 4 (4GB or 8GB)
+- USB Microphone (or onboard mic)
+- Speakers (3.5mm jack or HDMI)
+- MicroSD card (32GB+ recommended)
+
+---
+
+## 📅 Last Updated
+
+April 12, 2025
