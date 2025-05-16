@@ -58,23 +58,3 @@ else:
         print(f"{num}  {amenity.capitalize()}: {name} at Address: {address}")
         print(f"   Distance from center: {distance:.2f} km")
         num+=1
-# (Optional) Save to CSV
-import csv
-with open("osm_nearby_places_with_address.csv", "w", newline='') as f:
-    writer = csv.writer(f)
-    writer.writerow(["Amenity", "Name", "Address", "Latitude", "Longitude", "Distance (km)"])
-    for node in places:
-        lat, lon = node.lat, node.lon
-        location = geolocator.reverse((lat, lon), language="en")
-        address = location.address if location else "Address not found"
-        distance = geodesic((latitude, longitude), (lat, lon)).km
-        writer.writerow([
-            node.tags.get("amenity", ""),
-            node.tags.get("name", ""),
-            address,
-            lat,
-            lon,
-            distance
-        ])
-print("\nSaved results to osm_nearby_places_with_address.csv")
-

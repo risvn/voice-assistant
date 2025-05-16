@@ -1,6 +1,6 @@
 import sys
 import subprocess
-from get_info.wiki import get_summary
+from core.wiki import get_summary
 
 # your Wikipedia content
 qurey=sys.argv[1]
