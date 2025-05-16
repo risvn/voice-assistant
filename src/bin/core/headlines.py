@@ -1,31 +1,48 @@
-import requests
+import feedparser
+import re
+from datetime import datetime
 
-NEWS_API_KEY = "67c5d79c7ae84b59ba4ed47b606d0ddc"
+# RSS feeds from Indian news sources
+RSS_FEEDS = [
+    "https://feeds.feedburner.com/ndtvnews-top-stories",
+    "https://indianexpress.com/section/india/feed/",
+    "https://www.indiatoday.in/rss/home"
+]
 
-def get_latest_news():
-    news_headlines = []
-    url = ('https://newsapi.org/v2/top-headlines?'
-       'country=us&'
-       'apiKey=67c5d79c7ae84b59ba4ed47b606d0ddc')
-    res = requests.get(url).json()
-    articles = res["articles"]
-    for article in articles:
-        title = article.get("title", "No Title")
-        description = article.get("description", "No Description")
-        source = article.get("source", {}).get("name", "Unknown Source")
-    
-        news_headlines.append({
-            "title": title,
-            "description": description,
-            "source": source
-        })
-    
-    return news_headlines[:5]
+def clean_source_name(name):
+    name = re.sub(r'\s*Search Records Found.*$', '', name)
+    name = re.sub(r'\s*\d+\s*$', '', name)
+    return name.strip()
 
-news_list = get_latest_news()
+def fetch_top_headlines(max_articles=3):
+    headlines = []
+    sources = set()
+    for url in RSS_FEEDS:
+        feed = feedparser.parse(url)
+        source_raw = feed.feed.get("title", "Unknown Source")
+        source = clean_source_name(source_raw)
+        sources.add(source)
+        for entry in feed.entries:
+            title = entry.title.strip()
+            description = entry.get("summary", "").strip()
+            headlines.append({
+                "title": title,
+                "description": description,
+                "source": source
+            })
+    # Limit to max_articles
+    return headlines[:max_articles], sorted(sources)
 
-for idx, news in enumerate(news_list, start=1):
-    print(f"\n Article {idx}")
-    print(f" Title      : {news['title']}")
-    print(f" Description: {news['description']}")
-    print(f" Source     : {news['source']}")
+if __name__ == "__main__":
+    today = datetime.now().strftime("%A, %d %B %Y")
+    headlines, sources = fetch_top_headlines()
+
+    print(f" {today}")
+    print(f" Top News Headlines in India Today from {', '.join(sources)}:\n")
+
+    for idx, article in enumerate(headlines, start=1):
+        print(f"Article {idx} ")
+        print(f" Title      : {article['title']}")
+        print(f" Description: {article['description'] or 'No description available.'}")
+        print(f" Source     : {article['source']}\n")
+
