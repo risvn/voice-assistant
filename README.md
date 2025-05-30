@@ -1,6 +1,6 @@
-# 🧠 PILL: Pi LLaMA Voice-to-Voice AI Assistant
+# JOi/pill: Voice-to-Voice AI Assistant
 
-**PILL** (Pi LLaMA) is an offline, fully local voice assistant for Raspberry Pi, integrating:
+**JOi** is an offline, fully local voice assistant for Raspberry Pi, integrating:
 
 - 🎙️ **Whisper.cpp** — Speech-to-Text (STT)
 - 🧠 **TinyLLaMA (via llama.cpp)** — Language Model for text generation
@@ -10,28 +10,49 @@ Built as a **Bachelor's Major Project**, it delivers real-time, low-latency voic
 
 ---
 
+## 🛠️ Hardware Requirements
+
+- Raspberry Pi 4 (4GB or 8GB)
+- USB Microphone (or onboard mic)
+- Speakers (3.5mm jack or HDMI)
+- MicroSD card (32GB+ recommended)
+
+
+---
+
 ## 📁 Project Structure
 
 ```
 pill/
-├── audio/                          # Temporary audio files
-│   └── speech.wav
-├── bin/                            # Executable scripts
-│   ├── run.sh                      # Main voice-to-voice pipeline
-│   ├── speak                       # TTS wrapper
-│   └── tokens                      # LLaMA wrapper
+├── audio/ # Temporary audio files
+│ └── speech.wav
+├── bin/ # Executable scripts
+│ ├── run.sh # Main voice-to-voice pipeline
+│ ├── speak # TTS wrapper
+│ └── tokens # LLaMA wrapper
 ├── stt/
-│   ├── bin/                        # Whisper binary
-│   └── models/                     # Whisper model (e.g. ggml-tiny.bin)
+│ ├── bin/ # Whisper binary
+│ └── models/ # Whisper model (e.g., ggml-tiny.bin)
 ├── llm/
-│   ├── bin/                        # llama.cpp binary and shared libs
-│   └── models/                     # GGUF LLaMA models
+│ ├── bin/ # llama.cpp binary and shared libs
+│ └── models/ # GGUF LLaMA models
 ├── tts/
-│   ├── piper/                      # Piper binary
-│   └── voice/                      # ONNX voice models
+│ ├── piper/ # Piper binary
+│ └── voice/ # ONNX voice models
 ├── requirements.txt
 └── README.md
+
 ```
+---
+
+
+This pipeline will:
+1. Record audio from mic
+2. Transcribe with Whisper
+3. Generate reply with LLaMA
+4. Speak with Piper
+
+
 
 ---
 
@@ -57,7 +78,7 @@ pill/
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/pill.git
+git clone https://github.com/rsvn/pill.git
 cd pill
 ```
 
@@ -65,6 +86,23 @@ cd pill
 
 ```bash
 pip install -r requirements.txt
+```
+
+### 🐍 **Set up a virtual environment**
+
+  Using `venv`:
+
+```shell
+    python -m venv venv
+    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+```
+
+
+
+#### run set.sh for installing the required models or bulid it your self from below repo
+```
+./setup.sh
+
 ```
 
 ### 3️⃣ Build/Download Binaries
@@ -115,22 +153,11 @@ Ensure `llm/bin` is in your shared library path:
 export LD_LIBRARY_PATH=llm/bin:$LD_LIBRARY_PATH
 ```
 
----
 
-## 🚀 Run the Assistant
-
-```bash
-cd bin
-./run.sh
-```
-
-This pipeline will:
-1. Record audio from mic
-2. Transcribe with Whisper
-3. Generate reply with LLaMA
-4. Speak with Piper
 
 ---
+
+## if any thing breaks,make sure three api end points are working properly
 
 ## 🧪 Manual Testing
 
@@ -148,23 +175,93 @@ This pipeline will:
 
 ### Piper (TTS)
 
+ 🎤 **Install Local TTS - Piper**
+
+   _A faster and lightweight alternative to MeloTTS_
+
+   ***Download the Piper Binary and the voice from Github***
+
+   Use the following [link](https://github.com/rhasspy/piper) to install Piper Binary for your operating system.
+
+   Use the following [link](https://github.com/rhasspy/piper?tab=readme-ov-file#voices) to download Piper voices.
+   Each voice will have two files:
+   | `.onnx` | Actual voice model |
+   | `.onnx.json` | Model configuration |
+
+   For example:
+
+   ```shell
+   models/en_US-lessac-medium/
+   ├── en_US-lessac-medium.onnx
+   ├── en_US-lessac-medium.onnx.json
+   ```
+
+### test from the cli
+
 ```bash
 ./tts/piper/piper --model ../tts/voice/libritts_r/en_US-libritts_r-medium.onnx --text "Hello, I am your Pi assistant."
+
+---
+
+```
+## 🔧 Detailed Description of `bin/` Scripts
+
+The `bin/` folder in the PILL project contains the key scripts that power the full voice-to-voice AI pipeline. Each script is responsible for one or more stages of the interaction loop: capturing audio, generating a response, and speaking it back to the user.## 📁 Main Scripts & Modules (bin/ and core components)
+
+This section documents the purpose of each key script and module in the PILL project.
+
+### 🔧 `bin/` - Executable Scripts
+
+| Script/File     | Description |
+|-----------------|-------------|
+| `run-server.sh`        | Main orchestrator script that handles the complete voice-to-voice assistant pipeline: audio recording → transcription → LLM response → TTS output. |
+| `speak`         | Wrapper for Piper TTS. Converts text input to spoken audio using the selected voice model. |
+| `tokens`        | Wrapper for LLaMA model. Takes user prompts and runs the language model to generate text responses. |
+
+---
+
+### ⚙️ Core Components
+
+| Module/Folder     | Description |
+|-------------------|-------------|
+| `core/`           | Contains the logic for external data integrations such as news scraping and data preprocessing. Ideal for enriching responses with real-world context such as news,weather,maps,wiki. |
+| `auto-comp/`      | Provides auto-completion or predictive typing features. Helps improve user experience by suggesting or auto-filling text. |
+| `get.py`          | Script to retrieve dynamic content like weather updates, news headlines, or Wikipedia summaries. Acts as a smart data fetcher for the assistant. |
+| `run-server/`        | A script or module to run all major features or tests together. Useful for demos or integration testing. |
+| `simple-cli/`     | A basic command-line interface to interact with the assistant via text. Does not involve voice processing. Useful for debugging or quick tests. |
+| `spell/`          | Provides gpt response while taking input in the form of text from the user |
+| `tokenizer/`      | Utility functions for tokenizing input or output text for compatibility with the LLaMA model. Handles text formatting, splitting, and pre-processing. |
+
+
+
+
+---
+
+### 🗣️ `run-server.sh` – Master Orchestrator
+
+This is the **main script** that ties the entire system together and initiates the voice assistant workflow.
+
+#### Responsibilities:
+- Records a voice input from the microphone and saves it as `audio/speech.wav`
+- Transcribes the audio to text using Whisper (`whisper-cli`)
+- Feeds the transcribed prompt to the LLM via the `tokens` wrapper script
+- Converts the generated text response into speech using the `speak` wrapper
+- Plays back the synthesized voice to the user
+
+
+---
+## 🚀 Run the Assistant
+
+```bash
+cd bin
+./run-server
 ```
 
----
 
 
-
-## 🧠 Hardware Requirements
-
-- Raspberry Pi 4 (4GB or 8GB)
-- USB Microphone (or onboard mic)
-- Speakers (3.5mm jack or HDMI)
-- MicroSD card (32GB+ recommended)
-
----
 
 ## 📅 Last Updated
 
-April 12, 2025
+may 31, 2025
+
+####  -- rsvn
