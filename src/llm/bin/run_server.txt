@@ -1,0 +1,2 @@
+./llama-server -m ../models/tinyllama_1b_q4_chat.gguf --port 8080
+

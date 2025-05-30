@@ -1,0 +1,1 @@
+ ./llama-cli -m ../../../models/tinyll/tinyllama_1b_q4_chat.gguf  -p "what is happiness" -n 150

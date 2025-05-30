@@ -6,13 +6,13 @@ from wikipedia.exceptions import DisambiguationError, PageError
 def get_summary(query):
     try:
         # Try getting the summary directly
-        summary = wikipedia.summary(query, sentences=5)
+        summary = wikipedia.summary(query, sentences=6)
         return summary
     except (DisambiguationError, PageError) as e:
         # If summary fails, fallback to search and get the title
         title = search_wikipedia(query)
         if title:
-            return wikipedia.summary(title, sentences=4)
+            return wikipedia.summary(title, sentences=6)
         else:
             return "No relevant inforamation page found."
     except Exception as e:
