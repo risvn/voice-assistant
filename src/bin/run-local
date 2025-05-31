@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# ---------------- Paths ----------------
+export LD_LIBRARY_PATH="../llm/bin:$LD_LIBRARY_PATH"
+llama_bin="../llm/bin/llama-server"
+llama_model="../llm/models/tinyllama_1b_q4_chat.gguf"
+
+whisper="../stt/bin/whisper-cli"
+txt_model="../stt/models/ggml-tiny.bin"
+audio_file="../audio/speech.wav"
+
+piper="../tts/piper/piper"
+tts_model="../tts/voice/libritts_r/en_US-libritts_r-medium.onnx"
+
+port=8080
+host="127.0.0.1"
+llama_url="http://$host:$port/completion"
+
+# ---------------- Start LLaMA server ----------------
+if ! pgrep -f "$llama_bin" > /dev/null; then
+  echo "🚀 Starting LLaMA server..."
+  "$llama_bin" -m "$llama_model" --port "$port" > /dev/null 2>&1 &
+  llama_pid=$!
+
+  echo "⏳ Waiting for LLaMA server to become available..."
+  until curl -s --connect-timeout 1 "$llama_url" -X POST -H "Content-Type: application/json" \
+    -d '{"prompt":"ping","n_predict":1}' > /dev/null; do
+    sleep 1
+  done
+  echo "✅ LLaMA server is ready!"
+else
+  echo "🔁 LLaMA server already running."
+fi
+
+echo "🎙️ Pill Assistant (Server Mode) Started"
+
+# ---------------- Main Loop ----------------
+while true; do
+  echo ""
+  echo "🔴 Listening for your voice..."
+  arecord -q -f S16_LE -r 16000 -c 1 -d 5 "$audio_file"
+
+  echo "🧠 Transcribing speech to text..."
+  "$whisper" -m "$txt_model" -f "$audio_file" -otxt > /dev/null 2>&1
+  transcript=$(cat "${audio_file}.txt")
+
+  if [ -z "$transcript" ]; then
+    echo "⚠️ Didn't catch that. Please speak clearly."
+    continue
+  fi
+
+  echo "📜 You said: \"$transcript\""
+
+  # Optional system prompt
+  system_prompt="<|system|>\nYou are a helpful assistant."
+  chat_prompt="$system_prompt\n<|user|>\n$transcript<|assistant|>\n"
+
+  echo "🤖 Generating response from LLaMA..."
+  response=$(curl -s "$llama_url" \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d "$(jq -nc --arg prompt "$chat_prompt" '{"prompt": $prompt, "n_predict": 128}')" \
+    | jq -r '.content')
+
+  echo "🗣️ Response: $response"
+
+  echo "🔊 Speaking out loud..."
+  echo "$response" | "$piper" --model "$tts_model" --output-raw 2>/dev/null | aplay -q -f S16_LE -r 22050
+
+  echo "🔁 Ready for the next query."
+done
+
