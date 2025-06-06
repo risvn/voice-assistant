@@ -3,7 +3,7 @@ import chromadb
 import re
 import os
 
-
+#pre-processing the text and making in to the chunks
 def split_into_chunks(text, max_words=50, overlap=10):
     sentences = re.split(r'(?<=[.!?])\s+', text.strip())
     chunks = []
@@ -26,7 +26,7 @@ def split_into_chunks(text, max_words=50, overlap=10):
     return chunks
 
 
-
+#if any files are changed in ./data the chroma_db is created 
 def update_db(data_dir="./data", db_dir="./chroma_db", filelist_path="./data/filelist.txt"):
     """Rebuild DB only if new or different filenames are found in ./data."""
     current_files = sorted(os.listdir(data_dir))
@@ -52,6 +52,7 @@ def update_db(data_dir="./data", db_dir="./chroma_db", filelist_path="./data/fil
     return True
 update_db()
 
+#creating the chroma_db from the text-embeddings
 def store_embeddings(chunks, embeddings):
     """Store chunks and embeddings to ChromaDB."""
     client = chromadb.PersistentClient(path="./chroma_db")
@@ -69,7 +70,7 @@ def store_embeddings(chunks, embeddings):
         print("✅ Already indexed. Skipping.")
     return collection
 
-
+#seraching the qurey-embeddings from the chroma_db
 def query_embeddings(collection, model, query, n_results=2):
     """Query ChromaDB for relevant documents."""
     query_embedding = model.encode([query])[0].tolist()
@@ -78,6 +79,23 @@ def query_embeddings(collection, model, query, n_results=2):
         n_results=n_results
     )
     return results['documents']
+
+#generates the prompt_templet after getting context from rag-pipeline
+def generate_prompt(context: str, query: str, system_prompt: str = "You are a helpful assistant.") -> str:
+    prompt = f"""<|system|>
+{system_prompt}
+<|user|>
+Use the following context to answer the question:
+If the answer is not present in the context, respond with "I don't know."
+--------------------
+{context}
+--------------------
+
+Question: {query}
+<|assistant|>
+"""
+    return prompt
+
 
 
 if __name__ == "__main__":
@@ -99,6 +117,8 @@ if __name__ == "__main__":
 
     # Query
     query = "what is social media"
-    retrieved_docs = query_embeddings(collection, model, query)
-
-    print("🔍 Retrieved:", retrieved_docs)
+    context = query_embeddings(collection, model, query)
+    
+    #prompt
+    prompt=generate_prompt(context,query)
+    print(prompt)
