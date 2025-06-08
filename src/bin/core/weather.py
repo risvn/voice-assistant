@@ -9,15 +9,21 @@ def get_detailed_weather(city):
 
         current = data["current_condition"][0]
 
-        print(f" Location     : {city.capitalize()}")
-        print(f" Temperature  : {current['temp_C']}°C")
-        print(f" Condition    : {current['weatherDesc'][0]['value']}")
-        print(f" Wind         : {current['windspeedKmph']} km/h {current['winddir16Point']}")
-        print(f" Humidity     : {current['humidity']}%")
-        print(f" Feels Like   : {current['FeelsLikeC']}°C")
-        print(f" Cloud Cover  : {current['cloudcover']}%")
+        context = (
+            f"Weather Report for {city.capitalize()}:\n"
+            f"- Temperature: {current['temp_C']}°C\n"
+            f"- Condition: {current['weatherDesc'][0]['value']}\n"
+            f"- Wind: {current['windspeedKmph']} km/h {current['winddir16Point']}\n"
+            f"- Humidity: {current['humidity']}%\n"
+            f"- Feels Like: {current['FeelsLikeC']}°C\n"
+            f"- Cloud Cover: {current['cloudcover']}%\n"
+        )
+
+        return context
 
     except Exception as e:
-        print("Error fetching weather:", e)
+        return f"Error fetching weather: {e}"
 
-get_detailed_weather("hyderabad")
+if __name__ == "__main__":
+    print(get_detailed_weather("hyderabad"))
+
