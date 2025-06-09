@@ -1,21 +1,26 @@
 import sys
 from pathlib import Path
-
+import os
 # Include ../bin/core in the import path
 sys.path.append(str(Path(__file__).resolve().parent.parent / "core"))
-
 from core.wiki import get_summary
 #from core.nearby import find_nearby
 from core.headlines import fetch_top_headlines
 from core.weather import get_detailed_weather
 
 
+from rag import get_rag_prompt
+
+
+
 # --- Query classification ---
 KEYWORDS = {
+
     "weather": ["cool","temperature","weather"],
+    "rag": ["rag","docs","documents","text","find","search"],
     "nearby": ["near me", "nearby", "closest", "around me", "in my area"],
     "headlines": ["news", "headlines", "breaking news", "latest news"],
-    "wiki": ["who","who is", "what is", "when did", "wikipedia", "tell me about"],
+    "wiki": ["who","who is",  "when did", "wikip", "tell me about"],
 }
 
 def classify_query(query: str) -> str:
@@ -32,6 +37,7 @@ def generate_prompt(context: str, query: str, system_prompt: str = "You are a he
 <|user|>
 Use the following context to answer the question:
 If the answer is not present in the context, respond with "I don't know."
+and take the feed back of the response
 --------------------
 {context}
 --------------------
@@ -51,6 +57,9 @@ def get_context_and_prompt(query: str) -> str:
         # context = find_nearby(query)
         context = "Nearby search is not implemented yet."
         return generate_prompt(context, query)
+    elif category == "rag":
+        context = get_rag_prompt(query)
+        return generate_prompt(context, query)
     elif category == "wiki":
         context = get_summary(query)
         return generate_prompt(context, query)
@@ -60,11 +69,13 @@ def get_context_and_prompt(query: str) -> str:
     else:
         # Just return the query in a plain prompt
         return f"""<|system|>
-You are a helpful assistant.
+You are a thoughtful and emotionally intelligent chat companion.
+You respond in a short, insightful, and engaging manner—like a friend.
+Use natural, language ask feed back on your response.
+
 <|user|>
 {query}
 <|assistant|>"""
-
 
 # --- CLI entrypoint ---
 if __name__ == "__main__":

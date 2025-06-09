@@ -1,0 +1,97 @@
+#!/bin/bash
+
+# ---------------- Config ----------------
+laptop_ip="192.168.231.189"   # ← replace this with your laptop's IP
+port=8080
+llama_url="http://$laptop_ip:$port/completion"
+
+whisper="../stt/bin/whisper-cli"
+txt_model="../stt/models/ggml-tiny.bin"
+audio_file="../audio/speech.wav"
+
+piper="../tts/piper/piper"
+tts_model="../tts/voice/libritts_r/en_US-libritts_r-medium.onnx"
+
+echo " Pill Assistant (Client Mode - using laptop's LLaMA) Started"
+
+while true; do
+  echo ""
+  echo "🔴 Listening for your voice..."
+  arecord -q -f S16_LE -r 16000 -c 1 -d 5 "$audio_file"
+
+  echo " Transcribing speech to text..."
+  "$whisper" -m "$txt_model" -f "$audio_file" -otxt > /dev/null 2>&1
+  transcript=$(cat "${audio_file}.txt")
+
+  if [ -z "$transcript" ]; then
+    echo " Didn't catch that. Please speak clearly."
+    continue
+  fi
+
+  echo " You said: \"$transcript\""
+
+  # Optional system prompt
+  system_prompt="<|system|>\nYou are a thoughtful and emotionally intelligent chat companion. 
+You respond in a 2-3 sentences short, insightful, and engaging manner—like a friend who listens well and speaks at the end take feed bac. 
+."
+  chat_prompt="$system_prompt\n<|user|>\n$transcript<|assistant|>\n"
+
+  echo " Streaming response from LLaMA server on $laptop_ip..."
+
+  buffer=""
+  min_chunk_len=53  # chars before sending to TTS
+
+  # Use a named pipe to asynchronously play audio
+  fifo_audio="/tmp/piper_fifo_$$"
+  rm -f "$fifo_audio"
+  mkfifo "$fifo_audio"
+
+  # Start aplay to read from fifo asynchronously
+  aplay -q -f S16_LE -r 22050 "$fifo_audio" &
+  aplay_pid=$!
+
+  # Function to send text to Piper and pipe to fifo in background
+  speak_chunk() {
+    echo "$1" | "$piper" --model "$tts_model" --output-raw 2>/dev/null > "$fifo_audio"
+  }
+
+  # Read streaming response line by line
+  curl -s "$llama_url" \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d "$(jq -nc --arg prompt "$chat_prompt" '{"prompt": $prompt, "n_predict": 128, "stream": true}')" \
+  | while IFS= read -r line; do
+      # Remove 'data: ' prefix
+      json="${line#data: }"
+
+      # Extract 'content' field safely
+      chunk=$(echo "$json" | jq -r '.content // empty' 2>/dev/null)
+
+      if [[ -n "$chunk" ]]; then
+        echo -n "$chunk"  # print chunk immediately to console
+        buffer+="$chunk"
+
+        # If buffer is large enough or ends with punctuation, speak it
+        if [[ ${#buffer} -ge $min_chunk_len ]] || [[ "$buffer" =~ [\.\!\?]$ ]]; then
+          # Send to Piper async so TTS runs while more text comes
+          speak_chunk "$buffer" &
+          buffer=""
+        fi
+      fi
+    done
+
+  # Speak leftover buffer if any
+  if [[ -n "$buffer" ]]; then
+    speak_chunk "$buffer" &
+  fi
+
+  # Wait for any last TTS to finish
+  wait
+
+  # Cleanup fifo and kill aplay process
+  kill "$aplay_pid" 2>/dev/null
+  rm -f "$fifo_audio"
+
+  echo ""
+  echo " Ready for the next query."
+done

@@ -41,7 +41,7 @@ echo "📝 Transcript: $transcript"
 
 # If Whisper output is empty, exit
 if [ -z "$transcript" ]; then
-  echo "❌ No transcription was generated."
+  echo " No transcription was generated."
   exit 1
 fi
 

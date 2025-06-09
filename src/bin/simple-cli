@@ -1,5 +1,0 @@
-#!/bin/bash
-
-export LD_LIBRARY_PATH="../llm/bin:$LD_LIBRARY_PATH"
-prompt="$1"
-../llm/bin/llama-cli -m ../llm/models/tinyllama_1b_q4_chat.gguf  -p "$prompt" -n 150

@@ -1,0 +1,32 @@
+#!/bin/bash
+
+export LD_LIBRARY_PATH=../llm/bin:$LD_LIBRARY_PATH
+
+model="../llm/bin/llama-cli"
+path_to_gguf="../llm/models/tinyllama_1b_q4_chat.gguf"
+tokens=78
+
+piper="../tts/piper/piper"
+tts_model="../tts/voice/hfc_female/hfc_female.onnx" 
+
+#additional voice_models:
+# "../tts/voice/libritts_r/en_US-libritts_r-medium.onnx"
+# "../tts/voice/libritts/en_US-libritts-medium.onnx"
+
+
+# Use provided prompt or default
+prompt="${1:-Tell me a joke}"
+
+# Temp file for LLaMA output
+
+# Generate the text with LLaMA, pass it to Piper for speech synthesis, and play the audio
+"$model" -m "$path_to_gguf" -p "$prompt" -n "$tokens" | \
+tee /dev/tty | \
+"$piper" --model "$tts_model" --output-raw | \
+aplay -f S16_LE -r 22050
+
+else
+
+
+    echo "❌ LLaMA produced no output."
+fi

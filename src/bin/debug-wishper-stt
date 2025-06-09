@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#whisper-cli
+whisper="../stt/bin/whisper-cli"
+
+#txt-model
+txt_model="../stt/models/ggml-tiny.bin"         # base "../stt/models/ggml-base.en.bin"
+
+# Use provided prompt or default
+audio_file="${1:-../audio/speech.wav}"
+
+arecord -f S16_LE -r 16000 -c 1 -d 4 ../audio/speech.wav
+
+
+"$whisper" -m "$txt_model" -f "$audio_file" -otxt > /dev/null
+
+# Print the result to stdout
+cat "${audio_file}.txt"
