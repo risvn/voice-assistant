@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ---------------- Config ----------------
-laptop_ip="192.168.231.189"   # ← replace this with your laptop's IP
+laptop_ip="192.168.231.189"
 port=8080
 llama_url="http://$laptop_ip:$port/completion"
 
@@ -11,43 +11,52 @@ audio_file="../audio/speech.wav"
 
 piper="../tts/piper/piper"
 tts_model="../tts/voice/libritts_r/en_US-libritts_r-medium.onnx"
+beep_sound="../audio/beep/bing.mp3"
 
 echo "🎙️ Pill Assistant (Client Mode - using laptop's LLaMA) Started"
 
 # ---------------- Main Loop ----------------
 while true; do
   echo ""
-  echo "🔴 Listening for your voice..."
+  mpg123 -q "$beep_sound"
+  echo "[🔴 Listening ...]"
+
+  # 1.  Beep before recording
+  # 2. Record audio
   arecord -q -f S16_LE -r 16000 -c 1 -d 5 "$audio_file"
 
-  echo "🧠 Transcribing speech to text..."
+
+  echo "[ Transcribing speech to text...]"
   "$whisper" -m "$txt_model" -f "$audio_file" -otxt > /dev/null 2>&1
   transcript=$(cat "${audio_file}.txt")
 
   if [ -z "$transcript" ]; then
-    echo "⚠️ Didn't catch that. Please speak clearly."
+    echo "⚠️Didn't catch that. Please speak clearly."
     continue
   fi
 
-  echo "📜 You said: \"$transcript\""
+  echo "[< You said: \"$transcript\">]"
 
-  # Optional system prompt
-  system_prompt="<|system|>\nYou are a thoughtful and emotionally intelligent chat companion. 
-You respond in a short, insightful, and engaging manner—like a friend. 
-Use natural, language ask feed back on your response."
-  chat_prompt="$system_prompt\n<|user|>\n$transcript<|assistant|>\n"
+  echo "[Query processing...]"
+  # 4. Generate full LLM prompt using query_handler.py
+  prompt=$(python3 ./query_handler.py "$transcript")
+  
 
-  echo "🤖 Sending to LLaMA server on $laptop_ip..."
+  echo "$prompt"
+
+  # 5. Send prompt to LLaMA server
+  echo "[generating respons...]"
   response=$(curl -s "$llama_url" \
     -X POST \
     -H "Content-Type: application/json" \
-    -d "$(jq -nc --arg prompt "$chat_prompt" '{"prompt": $prompt, "n_predict": 128}')" \
+    -d "$(jq -nc --arg prompt "$prompt" '{"prompt": $prompt, "n_predict": 128}')" \
     | jq -r '.content')
 
-  echo "🗣️ Response: $response"
+  echo " < Response >: $response"
 
-  echo "🔊 Speaking out loud..."
+  # 6. Speak it out
+  echo "[🔊 Speaking...]"
   echo "$response" | "$piper" --model "$tts_model" --output-raw 2>/dev/null | aplay -q -f S16_LE -r 22050
 
-  echo "🔁 Ready for the next query."
+  echo "----- Ready for the next query.------"
 done
