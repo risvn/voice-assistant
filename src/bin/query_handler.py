@@ -37,7 +37,6 @@ def generate_prompt(context: str, query: str, system_prompt: str = "You are a he
 <|user|>
 Use the following context to answer the question:
 If the answer is not present in the context, respond with "I don't know."
-and take the feed back of the response
 --------------------
 {context}
 --------------------
@@ -68,14 +67,18 @@ def get_context_and_prompt(query: str) -> str:
         return generate_prompt(context, query)
     else:
         # Just return the query in a plain prompt
-        return f"""<|system|>
-You are a thoughtful and emotionally intelligent chat companion.
-You respond in a short, insightful, and engaging manner—like a friend.
-Use natural, language ask feed back on your response.
 
+          return f"""<|system|>
+You are a thoughtful and emotionally intelligent assistant. 
+You respond briefly, insightfully, and always stay open to feedback. 
+After answering, you wait for feedback from the user, and if they give any, you improve your response accordingly.
 <|user|>
 {query}
 <|assistant|>"""
+
+
+
+
 
 # --- CLI entrypoint ---
 if __name__ == "__main__":

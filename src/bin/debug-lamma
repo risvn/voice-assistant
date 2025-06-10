@@ -1,6 +1,0 @@
-#!/bin/bash
-
-export LD_LIBRARY_PATH="../llm/bin:$LD_LIBRARY_PATH"
-
-# Generate prompt using query_handler
-../llm/bin/llama-server -m ../llm/models/tinyllama_1b_q4_chat.gguf --port 8080 

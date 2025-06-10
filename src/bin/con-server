@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Load configuration
+source ../../config/config.env 
+
+echo "🎙️ Pill Assistant (Client Mode - using laptop's LLaMA) Started"
+
+# ---------------- Main Loop ----------------
+while true; do
+  echo ""
+  mpg123 -q "$BEEP_SOUND"
+  echo "[🔴 Listening ...]"
+
+  arecord -q -f S16_LE -r 16000 -c 1 -d "$RECORD_DURATION" "$AUDIO_FILE"
+
+  echo "[ Transcribing speech to text...]"
+  "$WHISPER" -m "$WHISPER_MODEL" -f "$AUDIO_FILE" -otxt > /dev/null 2>&1
+  transcript=$(cat "${AUDIO_FILE}.txt")
+
+  if [ -z "$transcript" ]; then
+    echo "⚠️ Didn't catch that. Please speak clearly."
+    continue
+  fi
+
+  echo "[< You said: \"$transcript\">]"
+  echo "[Query processing...]"
+
+  prompt=$(python3 ./query_handler.py "$transcript")
+  echo "$prompt"
+
+  echo "[Generating response...]"
+  response=$(curl -s "$LLAMA_ENDPOINT" \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d "$(jq -nc --arg prompt "$prompt" '{"prompt": $prompt, "n_predict": 128}')" \
+    | jq -r '.content')
+
+  echo " < Response >: $response"
+
+  echo "[🔊 Speaking...]"
+  echo "$response" | "$PIPER" --model "$TTS_MODEL" --output-raw 2>/dev/null | aplay -q -f S16_LE -r 22050
+
+  echo "----- Ready for the next query. -----"
+done

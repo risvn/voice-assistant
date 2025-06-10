@@ -19,46 +19,44 @@ echo "🎙️ Pill Assistant (Client Mode - using laptop's LLaMA) Started"
 while true; do
   echo ""
   mpg123 -q "$beep_sound"
-  echo "🔴 Listening for your voice..."
+  echo "[🔴 Listening ...]"
 
-  # 1. 🔔 Beep before recording
+  # 1.  Beep before recording
   # 2. Record audio
   arecord -q -f S16_LE -r 16000 -c 1 -d 5 "$audio_file"
 
-  # 3. Check for silence using sox (optional, if implemented)
-  # silent_check=$(sox "$audio_file" -n stat 2>&1 | grep "Maximum amplitude" | awk '{print $3}')
-  # if [[ $(echo "$silent_check < 0.01" | bc) -eq 1 ]]; then
-  #   echo "⚠️ Silence detected. Skipping..."
-  #   continue
-  # fi
 
-  echo "🧠 Transcribing speech to text..."
+  echo "[ Transcribing speech to text...]"
   "$whisper" -m "$txt_model" -f "$audio_file" -otxt > /dev/null 2>&1
   transcript=$(cat "${audio_file}.txt")
 
   if [ -z "$transcript" ]; then
-    echo "⚠️ Didn't catch that. Please speak clearly."
+    echo "⚠️Didn't catch that. Please speak clearly."
     continue
   fi
 
-  echo "📜 You said: \"$transcript\""
+  echo "[< You said: \"$transcript\">]"
 
+  echo "[Query processing...]"
   # 4. Generate full LLM prompt using query_handler.py
   prompt=$(python3 ./query_handler.py "$transcript")
+  
+
+  echo "$prompt"
 
   # 5. Send prompt to LLaMA server
-  echo "🤖 Sending to LLaMA server on $laptop_ip..."
+  echo "[generating respons...]"
   response=$(curl -s "$llama_url" \
     -X POST \
     -H "Content-Type: application/json" \
     -d "$(jq -nc --arg prompt "$prompt" '{"prompt": $prompt, "n_predict": 128}')" \
     | jq -r '.content')
 
-  echo "🗣️ Response: $response"
+  echo " < Response >: $response"
 
   # 6. Speak it out
-  echo "🔊 Speaking out loud..."
+  echo "[🔊 Speaking...]"
   echo "$response" | "$piper" --model "$tts_model" --output-raw 2>/dev/null | aplay -q -f S16_LE -r 22050
 
-  echo "🔁 Ready for the next query."
+  echo "----- Ready for the next query.------"
 done
