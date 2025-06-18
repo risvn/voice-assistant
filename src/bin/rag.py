@@ -1,4 +1,3 @@
-
 from sentence_transformers import SentenceTransformer
 import chromadb
 import re
@@ -27,7 +26,7 @@ def split_into_chunks(text, max_words=50, overlap=10):
     return chunks
 
 
-#if any files are changed in ./data the chroma_db is created 
+#if any files are changed in ./data the chroma_db is created
 def store_embeddings(chunks, embeddings, data_dir="./data", db_dir="./chroma_db", filelist_path="./data/.filelist.txt"):
     """Check if data has changed. Rebuild Chroma DB if so. Always return a valid collection."""
     current_files = sorted(os.listdir(data_dir))
@@ -112,9 +111,10 @@ def get_rag_prompt(query: str) -> str:
     embeddings = model.encode(chunks).tolist()
 
     collection = store_embeddings(chunks, embeddings)
-    results = query_embeddings(collection, model, query)
-
-    return results
+    context = query_embeddings(collection, model, query)
+    #prompt
+    prompt=generate_prompt(context,query)
+    return prompt 
 
 
 if __name__ == "__main__":
@@ -135,9 +135,9 @@ if __name__ == "__main__":
     collection = store_embeddings(chunks, embeddings)
 
     # Query
-    query = "what is social media"
+    query = "why is street food popular"
     context = query_embeddings(collection, model, query)
-    
+
     #prompt
     prompt=generate_prompt(context,query)
     print(prompt)
