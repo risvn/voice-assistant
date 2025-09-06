@@ -1,6 +1,6 @@
-# JOi/pill: Voice-to-Voice AI Assistant
+#  Voice-to-Voice AI Assistant
 
-**JOi** is an offline, fully local voice assistant for Raspberry Pi, integrating:
+Voice Assistant for Raspberry Pi, integrating:
 
 - 🎙️ **Whisper.cpp** — Speech-to-Text (STT)
 - 🧠 **TinyLLaMA (via llama.cpp)** — Language Model for text generation
@@ -257,11 +257,16 @@ cd bin
 ./run-server
 ```
 
+---
+##  ScreenShots
+
+![Terminal Interface](assets/terminal.png)
+![Raspberry Pi](assets/pi.png)
+![Setup](assets/demo.gif)
 
 
 
 ## 📅 Last Updated
-
-may 31, 2025
+sep 6, 2025
 
 ####  -- rsvn
