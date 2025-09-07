@@ -260,6 +260,8 @@ cd bin
 ---
 ##  ScreenShots
 
+![Work flow](assets/work-flow.png)
+![rag architecture](assets/rag.png)
 ![Terminal Interface](assets/terminal.png)
 ![Raspberry Pi](assets/pi.png)
 ![Setup](assets/demo.gif)
