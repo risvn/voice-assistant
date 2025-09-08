@@ -1,5 +1,41 @@
 #  Voice-to-Voice AI Assistant
 
+# 📑 Table of Contents
+
+
+
+1. [Voice-to-Voice AI Assistant](#voice-to-voice-ai-assistant)
+2. [Hardware Requirements](#hardware-requirements)
+3. [Project Structure](#project-structure)
+4. [Workflow Overview](#workflow-overview)
+   - [1. User Speaks](#1-user-speaks)
+   - [2. Speech-to-Text (STT)](#2-speech-to-text-stt)
+   - [3. Text Generation with LLaMA](#3-text-generation-with-llama)
+   - [4. Text-to-Speech (TTS)](#4-text-to-speech-tts)
+5. [Step-by-Step Setup](#step-by-step-setup)
+   - [Clone the Repository](#1-clone-the-repository)
+   - [Install Python Dependencies](#2-install-python-dependencies)
+   - [Virtual Environment Setup](#set-up-a-virtual-environment)
+   - [Run setup.sh](#run-setsh-for-installing-the-required-models-or-bulid-it-your-self-from-below-repo)
+   - [Build/Download Binaries](#3-builddownload-binaries)
+   - [Download Models](#4-download-models)
+     - [Whisper Model](#whisper-model)
+     - [TinyLLaMA (GGUF)](#tinyllama-gguf)
+     - [Piper Voice Model](#piper-voice-model)
+6. [Environment Configuration](#environment-configuration)
+7. [Manual Testing](#manual-testing)
+   - [Whisper (STT)](#whisper-stt)
+   - [LLaMA (LLM)](#llama-llm)
+   - [Piper (TTS)](#piper-tts)
+8. [Detailed Description of bin/ Scripts](#detailed-description-of-bin-scripts)
+   - [bin/ - Executable Scripts](#bin---executable-scripts)
+   - [Core Components](#core-components)
+   - [run-server.sh – Master Orchestrator](#run-serversh--master-orchestrator)
+9. [Run the Assistant](#run-the-assistant)
+10. [Screenshots & Block Diagrams](#screenshots)
+11. [Last Updated](#last-updated)
+
+
 Voice Assistant for Raspberry Pi, integrating:
 
 - 🎙️ **Whisper.cpp** — Speech-to-Text (STT)
@@ -10,7 +46,7 @@ Built as a **Bachelor's Major Project**, it delivers real-time, low-latency voic
 
 ---
 
-## 🛠️ Hardware Requirements
+##  Hardware Requirements
 
 - Raspberry Pi 4 (4GB or 8GB)
 - USB Microphone (or onboard mic)
@@ -20,7 +56,7 @@ Built as a **Bachelor's Major Project**, it delivers real-time, low-latency voic
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 pill/
@@ -56,39 +92,39 @@ This pipeline will:
 
 ---
 
-## 🔁 Workflow Overview
+##  Workflow Overview
 
-### 🗣️ 1. User Speaks
+### ️ 1. User Speaks
 - Audio is recorded with a microphone and saved to `audio/speech.wav`.
 
-### 🧏 2. Speech-to-Text (STT)
+###  2. Speech-to-Text (STT)
 - Audio is transcribed using Whisper.cpp with a small model like `ggml-tiny.bin`.
 
-### 🧠 3. Text Generation with LLaMA
+###  3. Text Generation with LLaMA
 - Transcribed text is passed to TinyLLaMA via `llama.cpp`.
 - A quantized model (Q4/Q5) ensures fast inference on Raspberry Pi.
 
-### 🔊 4. Text-to-Speech (TTS)
+###  4. Text-to-Speech (TTS)
 - Piper TTS synthesizes the response using a pre-downloaded ONNX voice model.
 
 ---
 
-## 🛠️ Step-by-Step Setup
+### Step-by-Step Setup
 
-### 1️⃣ Clone the Repository
+###  Clone the Repository
 
 ```bash
 git clone https://github.com/rsvn/pill.git
 cd pill
 ```
 
-### 2️⃣ Install Python Dependencies
+### ️⃣ Install Python Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 🐍 **Set up a virtual environment**
+### Set up a virtual environment
 
   Using `venv`:
 
@@ -105,7 +141,7 @@ pip install -r requirements.txt
 
 ```
 
-### 3️⃣ Build/Download Binaries
+###  Build/Download Binaries
 
 - **Whisper.cpp:** Build `main` as `whisper-cli`
 - **llama.cpp:** Build `main` as `llama-cli`
@@ -118,7 +154,7 @@ llm/bin/llama-cli
 tts/piper/piper
 ```
 
-### 4️⃣ Download Models
+###  Download Models
 
 #### Whisper Model
 
@@ -145,7 +181,7 @@ wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US-libritts_
 
 ---
 
-## ⚙️ Environment Configuration
+## Environment Configuration
 
 Ensure `llm/bin` is in your shared library path:
 
@@ -159,7 +195,7 @@ export LD_LIBRARY_PATH=llm/bin:$LD_LIBRARY_PATH
 
 ## if any thing breaks,make sure three api end points are working properly
 
-## 🧪 Manual Testing
+##  Manual Testing
 
 ### Whisper (STT)
 
@@ -175,7 +211,7 @@ export LD_LIBRARY_PATH=llm/bin:$LD_LIBRARY_PATH
 
 ### Piper (TTS)
 
- 🎤 **Install Local TTS - Piper**
+  **Install Local TTS - Piper**
 
    _A faster and lightweight alternative to MeloTTS_
 
@@ -204,13 +240,13 @@ export LD_LIBRARY_PATH=llm/bin:$LD_LIBRARY_PATH
 ---
 
 ```
-## 🔧 Detailed Description of `bin/` Scripts
+##  Detailed Description of `bin/` Scripts
 
 The `bin/` folder in the PILL project contains the key scripts that power the full voice-to-voice AI pipeline. Each script is responsible for one or more stages of the interaction loop: capturing audio, generating a response, and speaking it back to the user.## 📁 Main Scripts & Modules (bin/ and core components)
 
 This section documents the purpose of each key script and module in the PILL project.
 
-### 🔧 `bin/` - Executable Scripts
+###  `bin/` - Executable Scripts
 
 | Script/File     | Description |
 |-----------------|-------------|
@@ -220,7 +256,7 @@ This section documents the purpose of each key script and module in the PILL pro
 
 ---
 
-### ⚙️ Core Components
+### ️ Core Components
 
 | Module/Folder     | Description |
 |-------------------|-------------|
@@ -237,7 +273,7 @@ This section documents the purpose of each key script and module in the PILL pro
 
 ---
 
-### 🗣️ `run-server.sh` – Master Orchestrator
+### ️ `run-server.sh` – Master Orchestrator
 
 This is the **main script** that ties the entire system together and initiates the voice assistant workflow.
 
@@ -250,7 +286,7 @@ This is the **main script** that ties the entire system together and initiates t
 
 
 ---
-## 🚀 Run the Assistant
+##  Run the Assistant
 
 ```bash
 cd bin
@@ -268,7 +304,7 @@ cd bin
 
 
 
-## 📅 Last Updated
+##  Last Updated
 sep 6, 2025
 
 ####  -- rsvn
